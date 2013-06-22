@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #define F_CPU 1000000UL
 #include <util/delay.h>
-#include <avr/pgmspace.h>
 
 #include "Lcd.h"
 
@@ -46,30 +45,90 @@
 #define LCD_5x8DOTS 0x00
 
 //==================================================
-byte LcdFirstColumnPositions[] PROGMEM = {0, 64, MAX_COLUMNS, 64 + MAX_COLUMNS};
+byte LcdFirstColumnPositions[] = {0, 64, MAX_COLUMNS, 64 + MAX_COLUMNS};
 //==================================================
 void _EnablePulse(void);
 void _WaitBusyFlagIsZero(void);
 void _SendCommand(byte cmd);
 void _SendCharacter(char c);
+volatile uint8_t *_GetPort(byte dataregister);
+volatile uint8_t *_GetDDR(byte dataregister);
 //==================================================
-byte *_LcdDisplayCtrlPtr;
+byte _LcdDisplayCtrl;
+byte _LcdNrOfDataPins;
+lcd_t *lcd_instance = NULL;
+volatile uint8_t *_LcdDataPort;
+volatile uint8_t *_LcdDataDDR;
+volatile uint8_t *_LcdCtrlPort;
+volatile uint8_t *_LcdCtrlDDR;
+byte _LcdRS;
+byte _LcdRW;
+byte _LcdE;
 //==================================================
-void LcdInit(void) {
-    _LcdDisplayCtrlPtr = (byte)malloc(sizeof(byte));
+
+void LcdPrintString(char *str);
+void LcdSetCursor(byte x, byte y);
+void LcdReturnHome(void);
+void LcdClearDisplay(void);
+void LcdDisplayOn(void);
+void LcdDisplayOff(void);
+void LcdCursorOn(void);
+void LcdCursorOff(void);    
+void LcdBlinkOn(void);
+void LcdBlinkOff(void);
+
+lcd_t *LcdCreate(
+    byte datapins, 
+    byte dataregister,
+    byte ctrlregister,
+    byte rs,
+    byte rw,
+    byte e) {
+
+    if (lcd_instance != NULL) return lcd_instance;
     
-    LCD_CTRL_DDR |= 1 << LCD_RS | 1 << LCD_RW | 1 << LCD_E;
+    lcd_instance = (lcd_t *)malloc(sizeof(lcd_t));
+    
+    lcd_instance->PrintString = LcdPrintString;
+    lcd_instance->SetCursor = LcdSetCursor;
+    lcd_instance->ReturnHome = LcdReturnHome;
+    lcd_instance->ClearDisplay = LcdClearDisplay;
+    lcd_instance->DisplayOn = LcdDisplayOn;
+    lcd_instance->DisplayOff = LcdDisplayOff;
+    lcd_instance->CursorOn = LcdCursorOn;
+    lcd_instance->CursorOff = LcdCursorOff;
+    lcd_instance->BlinkOn = LcdBlinkOn;
+    lcd_instance->BlinkOff = LcdBlinkOff;
+                              
+    _LcdNrOfDataPins = datapins;
+    _LcdDataPort = _GetPort(dataregister);
+    _LcdDataDDR = _GetDDR(dataregister);
+    _LcdCtrlPort = _GetPort(ctrlregister);
+    _LcdCtrlDDR = _GetDDR(ctrlregister);
+    _LcdRS = rs;
+    _LcdRW = rw;
+    _LcdE = e;
+                                      
+    *_LcdCtrlDDR |= 1 << _LcdRS | 1 << _LcdRW | 1 << _LcdE;
     _delay_ms(15);
     
-    _SendCommand(LCD_CLEARDISPLAY);
-    _delay_ms(2);
+    lcd_instance->ClearDisplay();
     
-    _SendCommand(0x38); // Function set 8-bit data length (DL), 2 display lines, fonts 5x8 = 00111000 
+    switch(_LcdNrOfDataPins) {
+        case FOURPINS:
+            _SendCommand(0x28); // Function set 4-bit data length (DL), 2 display lines, fonts 5x8 = 00101000 
+            break;
+        case EIGHTPINS:
+        default:
+            _SendCommand(0x38); // Function set 8-bit data length (DL), 2 display lines, fonts 5x8 = 00111000 
+    }    
     _delay_us(50);
     
-    *_LcdDisplayCtrlPtr = LCD_DISPLAYON | LCD_CURSORON | LCD_BLINKOFF;
-    _SendCommand(LCD_DISPLAYCONTROL | *_LcdDisplayCtrlPtr); // Display ctrl On, Cursor, Blinking = 00001110
+    _LcdDisplayCtrl = LCD_DISPLAYON | LCD_CURSORON | LCD_BLINKOFF;
+    _SendCommand(LCD_DISPLAYCONTROL | _LcdDisplayCtrl); // Display ctrl On, Cursor, Blinking = 00001110
     _delay_us(50);
+
+    return lcd_instance;        
 }
 
 void LcdPrintString(char *str) {
@@ -77,13 +136,8 @@ void LcdPrintString(char *str) {
         _SendCharacter(*str++);
 }
 
-void LcdPrintStringP(char *str) {
-    while (pgm_read_byte(str) != 0)
-        _SendCharacter(pgm_read_byte(str++));
-}
-
 void LcdSetCursor(byte x, byte y) {
-    _SendCommand(0x80 + pgm_read_word(&LcdFirstColumnPositions[y-1]) + (x-1));
+    _SendCommand(0x80 + LcdFirstColumnPositions[y-1] + (x-1));
 }
 
 void LcdReturnHome(void) {
@@ -92,72 +146,92 @@ void LcdReturnHome(void) {
 
 void LcdClearDisplay(void) {
     _SendCommand(LCD_CLEARDISPLAY);
+    _delay_ms(2);
 }
 
 void LcdDisplayOn(void) {
-    *_LcdDisplayCtrlPtr |= LCD_DISPLAYON;
-    _SendCommand(LCD_DISPLAYCONTROL | *_LcdDisplayCtrlPtr);
+    _LcdDisplayCtrl |= LCD_DISPLAYON;
+    _SendCommand(LCD_DISPLAYCONTROL | _LcdDisplayCtrl);
 }
 
 void LcdDisplayOff(void) {
-    *_LcdDisplayCtrlPtr &= ~LCD_DISPLAYON;
-    _SendCommand(LCD_DISPLAYCONTROL | *_LcdDisplayCtrlPtr);
+    _LcdDisplayCtrl &= ~LCD_DISPLAYON;
+    _SendCommand(LCD_DISPLAYCONTROL | _LcdDisplayCtrl);
 }
 
 void LcdCursorOn(void) {
-    *_LcdDisplayCtrlPtr |= LCD_CURSORON;
-    _SendCommand(LCD_DISPLAYCONTROL | *_LcdDisplayCtrlPtr);
+    _LcdDisplayCtrl |= LCD_CURSORON;
+    _SendCommand(LCD_DISPLAYCONTROL | _LcdDisplayCtrl);
 }
 
 void LcdCursorOff(void) {    
-    *_LcdDisplayCtrlPtr &= ~LCD_CURSORON;    
-    _SendCommand(LCD_DISPLAYCONTROL | *_LcdDisplayCtrlPtr);
+    _LcdDisplayCtrl &= ~LCD_CURSORON;    
+    _SendCommand(LCD_DISPLAYCONTROL | _LcdDisplayCtrl);
 }
 
 void LcdBlinkOn(void) {
-    *_LcdDisplayCtrlPtr |= LCD_BLINKON;
-    _SendCommand(LCD_DISPLAYCONTROL | *_LcdDisplayCtrlPtr);
+    _LcdDisplayCtrl |= LCD_BLINKON;
+    _SendCommand(LCD_DISPLAYCONTROL | _LcdDisplayCtrl);
 }
 
 void LcdBlinkOff(void) {
-    *_LcdDisplayCtrlPtr &= ~LCD_BLINKON;
-    _SendCommand(LCD_DISPLAYCONTROL | *_LcdDisplayCtrlPtr);
+    _LcdDisplayCtrl &= ~LCD_BLINKON;
+    _SendCommand(LCD_DISPLAYCONTROL | _LcdDisplayCtrl);
 }
 
 //==================================================
+volatile uint8_t *_GetPort(byte dataregister) {
+    switch(dataregister) {
+        case REGISTER_A: return &PORTA;
+        case REGISTER_B: return &PORTB;
+        case REGISTER_C: return &PORTC;
+        case REGISTER_D: return &PORTD;
+    }
+    return NULL;
+}
+volatile uint8_t *_GetDDR(byte dataregister) {
+    switch(dataregister) {
+        case REGISTER_A: return &DDRA;
+        case REGISTER_B: return &DDRB;
+        case REGISTER_C: return &DDRC;
+        case REGISTER_D: return &DDRD;
+    }
+    return NULL;
+}
+
 void _EnablePulse(void) {
-    LCD_CTRL_PORT |= 1 << LCD_E;
+    *_LcdCtrlPort |= 1 << _LcdE;
     asm volatile ("nop");
     asm volatile ("nop");
-    LCD_CTRL_PORT &= ~(1 << LCD_E);
+    *_LcdCtrlPort &= ~(1 << _LcdE);
 }
 
 void _WaitBusyFlagIsZero(void) {
-    LCD_DATA_DDR = 0;
-    LCD_CTRL_PORT |= 1 << LCD_RW;
-    LCD_CTRL_PORT &= ~(1 << LCD_RS);
+    *_LcdDataDDR = 0;
+    *_LcdCtrlPort |= 1 << _LcdRW;
+    *_LcdCtrlPort &= ~(1 << _LcdRS);
 
-    while (LCD_DATA_PORT >= 0x80)
+    while (*_LcdDataPort >= 0x80)
     {
         _EnablePulse();
     }
-    LCD_DATA_DDR = 0xFF; //0xFF means 0b11111111
+    *_LcdDataDDR = 0xFF; //0xFF means 0b11111111
 }
 
 void _SendCommand(byte cmd) {
     _WaitBusyFlagIsZero();
-    LCD_DATA_PORT = cmd;
-    LCD_CTRL_PORT &= ~(1 << LCD_RW | 1 << LCD_RS);
+    *_LcdDataPort = cmd;
+    *_LcdCtrlPort &= ~(1 << _LcdRW | 1 << _LcdRS);
     _EnablePulse();
-    LCD_DATA_PORT = 0;
+    *_LcdDataPort = 0;
 }
 
 void _SendCharacter(char c) {
     _WaitBusyFlagIsZero();
-    LCD_DATA_PORT = c;
-    LCD_CTRL_PORT &= ~(1 << LCD_RW);
-    LCD_CTRL_PORT |= 1 << LCD_RS;
+    *_LcdDataPort = c;
+    *_LcdCtrlPort &= ~(1 << _LcdRW);
+    *_LcdCtrlPort |= 1 << _LcdRS;
     _EnablePulse();
-    LCD_DATA_PORT = 0;
+    *_LcdDataPort = 0;
 }
 //==================================================

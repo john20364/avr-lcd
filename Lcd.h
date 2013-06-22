@@ -9,72 +9,46 @@
 #define EIGHTPINS   1
 #define FOURPINS    2
 
-#define LCD_DATA_PORT   PORTB
-#define LCD_DATA_DDR    DDRB
+#define REGISTER_A  1
+#define REGISTER_B  2
+#define REGISTER_C  4
+#define REGISTER_D  8
 
-#define LCD_CTRL_PORT   PORTD
-#define LCD_CTRL_DDR    DDRD
-
-#define LCD_RS  4
-#define LCD_RW  5
-#define LCD_E   6     
-
-#define LcdPrintStaticString(aString) LcdPrintStringP(PSTR(aString))
-
-void LcdInit(void);
-void LcdPrintString(char *str);
-void LcdPrintStringP(char *str);
-void LcdSetCursor(byte x, byte y);
-void LcdReturnHome(void);
-void LcdClearDisplay(void);
-void LcdDisplayOn(void);
-void LcdDisplayOff(void);
-void LcdCursorOn(void);
-void LcdCursorOff(void);
-void LcdBlinkOn(void);
-void LcdBlinkOff(void);
-//~ //================================================================
-//~ typedef struct JBLcd_struct JBLcd;
+//~ #define LCD_DATA_PORT   PORTB
+//~ #define LCD_DATA_DDR    DDRB
 //~ 
-//~ typedef void (* setdatapins_fptr)(JBLcd *, byte d0, byte d1, byte d2, byte d3, 
-        //~ byte d4, byte d5, byte d6, byte d7);
-        //~ 
-//~ typedef void (* setctrlpins_fptr)(JBLcd *, byte rs, byte rw, byte e);
-//~ typedef void (* init_fptr)(JBLcd *);
-        //~ 
-//~ struct JBLcd_struct {
-    //~ byte _pin_mode;     // 4 or 8 bit mode
-    //~ 
-    //~ byte _data_pins[8]; // Data pins
-    //~ 
-    //~ byte _rs;           // Register Set
-    //~ byte _rw;           // Read / Write
-    //~ byte _e;            // Enable
-    //~ 
-    //~ void (* setdatapins)(JBLcd *, byte d0, byte d1, byte d2, byte d3, 
-        //~ byte d4, byte d5, byte d6, byte d7);
-    //~ 
-    //~ void (* setctrlpins)(JBLcd *, byte rs, byte rw, byte e);
-    //~ 
-    //~ void (* init)(JBLcd *);
-    
-    //~ void (* printString)(char *str);
-    //~ void (* printStringP)(char *str);
-    //~ void (* setCursor)(byte x, byte y);
-    //~ void (* home)(void);
-    //~ void (* clear)(void);
-    //~ void (* displayOn)(void);
-    //~ void (* displayOff)(void);
-    //~ void (* cursorOn)(void);
-    //~ void (* cursorOff)(void);
-    //~ void (* blinkOn)(void);
-    //~ void (* blinkOff)(void);
-    //~ // See for more functions LiquidCrystal.cpp
-    //~ 
-//~ };
-    //~ 
-//~ JBLcd *JBCreateLcd(void);
-//~ 
-//~ //================================================================
+//~ #define LCD_CTRL_PORT   PORTD
+//~ #define LCD_CTRL_DDR    DDRD
+
+//~ #define LCD_RS  4
+//~ #define LCD_RW  5
+//~ #define LCD_E   6     
+
+typedef void (* printstring_fptr)(char *);
+typedef void (* setcursor_fptr)(byte, byte);
+typedef void (* void_fptr)(void);
+
+typedef struct _lcd_struct_ lcd_t;
+
+struct _lcd_struct_ {
+    printstring_fptr PrintString;
+    setcursor_fptr SetCursor;
+    void_fptr ReturnHome;
+    void_fptr ClearDisplay;
+    void_fptr DisplayOn;
+    void_fptr DisplayOff;
+    void_fptr CursorOn;
+    void_fptr CursorOff;    
+    void_fptr BlinkOn;
+    void_fptr BlinkOff;
+};
+
+lcd_t *LcdCreate(
+    byte datapins, 
+    byte dataregister,
+    byte ctrlregister,
+    byte rs,
+    byte rw,
+    byte e);
     
 #endif

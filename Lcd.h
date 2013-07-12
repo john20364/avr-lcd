@@ -4,25 +4,10 @@
 
 #include "Type.h"
 
-#define MAX_COLUMNS 20
-
-#define EIGHTPINS   1
-#define FOURPINS    2
-
 #define REGISTER_A  1
 #define REGISTER_B  2
 #define REGISTER_C  4
 #define REGISTER_D  8
-
-//~ #define LCD_DATA_PORT   PORTB
-//~ #define LCD_DATA_DDR    DDRB
-//~ 
-//~ #define LCD_CTRL_PORT   PORTD
-//~ #define LCD_CTRL_DDR    DDRD
-
-//~ #define LCD_RS  4
-//~ #define LCD_RW  5
-//~ #define LCD_E   6     
 
 typedef void (* printstring_fptr)(char *);
 typedef void (* setcursor_fptr)(byte, byte);
@@ -43,12 +28,30 @@ struct _lcd_struct_ {
     void_fptr BlinkOff;
 };
 
-lcd_t *LcdCreate(
-    byte datapins, 
+lcd_t *Lcd8Create(
     byte dataregister,
+    byte pin0,
+    byte pin1,
+    byte pin2,
+    byte pin3,
+    byte pin4,
+    byte pin5,
+    byte pin6,
+    byte pin7,    
     byte ctrlregister,
     byte rs,
     byte rw,
     byte e);
-    
+
+lcd_t *Lcd4Create(
+    byte dataregister,
+    byte pin0,
+    byte pin1,
+    byte pin2,
+    byte pin3,
+    byte ctrlregister,
+    byte rs,
+    byte rw,
+    byte e);
+
 #endif

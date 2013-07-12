@@ -7,18 +7,22 @@
 #include "Lcd.h"
 
 lcd_t *lcd;
+
 int main(void)
 { 
-    lcd = LcdCreate(EIGHTPINS, REGISTER_B, REGISTER_D, 4, 5, 6);
+    //~ lcd = LcdCreate(REGISTER_B, 0, 1, 2, 3, 4, 5, 6, 7, 
+        //~ REGISTER_D, 4, 5, 6);
+    lcd = Lcd4Create(REGISTER_B, 0,1,2,3, REGISTER_D, 4, 5, 6);    
+
     lcd->SetCursor(1, 1);
-    lcd->PrintString("1 One");
+    lcd->PrintString("Wat een opluchting.");
     lcd->SetCursor(1, 2);
-    lcd->PrintString("2 Two");
+    lcd->PrintString("Is het toch gelukt.");
     lcd->SetCursor(1, 3);
-    lcd->PrintString("3 Three");
+    lcd->PrintString("REGISTER B 0123");
     lcd->SetCursor(1, 4);
-    lcd->PrintString("4 Four");
-    
+    lcd->PrintString("4-Bit Interface");
+
     while(1)
     {
     }

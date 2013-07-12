@@ -6,12 +6,11 @@
 #include "Type.h"
 #include "Lcd.h"
 
-lcd_t *lcd;
+Lcd *lcd;
 
 int main(void)
 { 
-    //~ lcd = LcdCreate(REGISTER_B, 0, 1, 2, 3, 4, 5, 6, 7, 
-        //~ REGISTER_D, 4, 5, 6);
+	// lcd 4-bit data communication
     lcd = Lcd4Create(REGISTER_B, 0,1,2,3, REGISTER_D, 4, 5, 6);    
 
     lcd->SetCursor(1, 1);

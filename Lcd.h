@@ -13,9 +13,7 @@ typedef void (* printstring_fptr)(char *);
 typedef void (* setcursor_fptr)(byte, byte);
 typedef void (* void_fptr)(void);
 
-typedef struct _lcd_struct_ lcd_t;
-
-struct _lcd_struct_ {
+typedef struct LcdStruct {
     printstring_fptr PrintString;
     setcursor_fptr SetCursor;
     void_fptr ReturnHome;
@@ -26,9 +24,9 @@ struct _lcd_struct_ {
     void_fptr CursorOff;    
     void_fptr BlinkOn;
     void_fptr BlinkOff;
-};
+} Lcd;
 
-lcd_t *Lcd8Create(
+Lcd *Lcd8Create(
     byte dataregister,
     byte pin0,
     byte pin1,
@@ -43,7 +41,7 @@ lcd_t *Lcd8Create(
     byte rw,
     byte e);
 
-lcd_t *Lcd4Create(
+Lcd *Lcd4Create(
     byte dataregister,
     byte pin0,
     byte pin1,

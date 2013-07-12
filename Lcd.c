@@ -49,22 +49,12 @@
 #define EIGHTPINS   1
 #define FOURPINS    2
 
-//==================================================
+// Variables
 byte LcdFirstColumnPositions[] = {0, 64, MAX_COLUMNS, 64 + MAX_COLUMNS};
-//==================================================
-void _EnablePulse(void);
-void _WaitBusyFlagIsZero(void);
-void _SendCommand(byte cmd);
-void _SendCharacter(char c);
-volatile uint8_t *_GetPort(byte dataregister);
-volatile uint8_t *_GetDDR(byte dataregister);
-void _Write4Bits(byte value);
-void _Write8Bits(byte value);
-//==================================================
 byte _LcdDisplayCtrl;
 byte _LcdDisplayFunction;
 byte _LcdDisplayMode;
-lcd_t *lcd_instance = NULL;
+Lcd *lcd_instance = NULL;
 volatile uint8_t *_LcdDataPort;
 volatile uint8_t *_LcdDataDDR;
 volatile uint8_t *_LcdCtrlPort;
@@ -73,8 +63,18 @@ byte _LcdRS;
 byte _LcdRW;
 byte _LcdE;
 byte _LcdDataPins[8];
-//==================================================
 
+// Internal functions
+void _EnablePulse(void);
+void _WaitBusyFlagIsZero(void);
+void _SendCommand(byte cmd);
+void _SendCharacter(char c);
+volatile uint8_t *_GetPort(byte dataregister);
+volatile uint8_t *_GetDDR(byte dataregister);
+void _Write4Bits(byte value);
+void _Write8Bits(byte value);
+
+// Public functions
 void LcdPrintString(char *str);
 void LcdSetCursor(byte x, byte y);
 void LcdReturnHome(void);
@@ -85,8 +85,9 @@ void LcdCursorOn(void);
 void LcdCursorOff(void);    
 void LcdBlinkOn(void);
 void LcdBlinkOff(void);
-    
-lcd_t *LcdCreate(
+
+// Lcd Factory function
+Lcd *LcdCreate(
     byte dataregister,
     byte pin0,
     byte pin1,
@@ -103,7 +104,7 @@ lcd_t *LcdCreate(
 
     if (lcd_instance != NULL) return lcd_instance;
     
-    lcd_instance = (lcd_t *)malloc(sizeof(lcd_t));
+    lcd_instance = (Lcd *)malloc(sizeof(Lcd));
     
     lcd_instance->PrintString = LcdPrintString;
     lcd_instance->SetCursor = LcdSetCursor;
@@ -193,7 +194,8 @@ lcd_t *LcdCreate(
     return lcd_instance;        
 }
 
-lcd_t *Lcd8Create(
+// Lcd Factory helper function for 8-bit data communication
+Lcd *Lcd8Create(
     byte dataregister,
     byte pin0,
     byte pin1,
@@ -213,7 +215,8 @@ lcd_t *Lcd8Create(
         ctrlregister, pin_rs, pin_rw, pin_e);
 }
 
-lcd_t *Lcd4Create(
+// Lcd Factory helper function for 4-bit data communication
+Lcd *Lcd4Create(
     byte dataregister,
     byte pin0,
     byte pin1,
@@ -228,6 +231,8 @@ lcd_t *Lcd4Create(
         pin0, pin1, pin2, pin3, 0, 0, 0, 0,
         ctrlregister, pin_rs, pin_rw, pin_e);
 }
+
+//----- PUBLIC-FUNCTIONS -----
 
 void LcdPrintString(char *str) {
     while(*str != 0)
@@ -280,7 +285,9 @@ void LcdBlinkOff(void) {
     _SendCommand(LCD_DISPLAYCONTROL | _LcdDisplayCtrl);
 }
 
-//==================================================
+
+//----- INTERNAL-FUNCTIONS -----
+
 volatile uint8_t *_GetPort(byte dataregister) {
     switch(dataregister) {
         case REGISTER_A: return &PORTA;
@@ -372,4 +379,3 @@ void _SendCharacter(char c) {
         _Write4Bits(c);
     }
 }
-//==================================================

@@ -1,5 +1,5 @@
 #include <avr/io.h>
-#define F_CPU 1000000UL
+#define F_CPU 8000000UL
 #include <util/delay.h>
 #include <stdlib.h>
 
@@ -15,13 +15,13 @@ int main(void)
     lcd = Lcd4Create(REGISTER_B, 0,1,2,3, REGISTER_D, 4, 5, 6);    
 
     lcd->SetCursor(1, 1);
-    lcd->PrintString("Wat een opluchting.");
+    lcd->PrintString("Row One");
     lcd->SetCursor(1, 2);
-    lcd->PrintString("Is het toch gelukt.");
+    lcd->PrintString("Row Two");
     lcd->SetCursor(1, 3);
-    lcd->PrintString("REGISTER B 0123");
+    lcd->PrintString("Row Three");
     lcd->SetCursor(1, 4);
-    lcd->PrintString("4-Bit Interface");
+    lcd->PrintString("Row Four");
 
     while(1)
     {

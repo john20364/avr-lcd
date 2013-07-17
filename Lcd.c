@@ -1,9 +1,10 @@
 // Lcd source file
 #include <avr/io.h>
 #include <stdlib.h>
-#define F_CPU 8000000UL
+#define F_CPU 1000000UL
 #include <util/delay.h>
 
+#include "Util.h"
 #include "Lcd.h"
 
 // commands
@@ -69,8 +70,6 @@ void _EnablePulse(void);
 void _WaitBusyFlagIsZero(void);
 void _SendCommand(byte cmd);
 void _SendCharacter(char c);
-volatile uint8_t *_GetPort(byte dataregister);
-volatile uint8_t *_GetDDR(byte dataregister);
 void _Write4Bits(byte value);
 void _Write8Bits(byte value);
 
@@ -117,10 +116,10 @@ Lcd *LcdCreate(
     lcd_instance->BlinkOn = LcdBlinkOn;
     lcd_instance->BlinkOff = LcdBlinkOff;
                               
-    _LcdDataPort = _GetPort(dataregister);
-    _LcdDataDDR = _GetDDR(dataregister);
-    _LcdCtrlPort = _GetPort(ctrlregister);
-    _LcdCtrlDDR = _GetDDR(ctrlregister);
+    _LcdDataPort = GetPort(dataregister);
+    _LcdDataDDR = GetDDR(dataregister);
+    _LcdCtrlPort = GetPort(ctrlregister);
+    _LcdCtrlDDR = GetDDR(ctrlregister);
     _LcdRS = pin_rs;
     _LcdRW = pin_rw;
     _LcdE = pin_e;
@@ -287,25 +286,6 @@ void LcdBlinkOff(void) {
 
 
 //----- INTERNAL-FUNCTIONS -----
-
-volatile uint8_t *_GetPort(byte dataregister) {
-    switch(dataregister) {
-        case REGISTER_A: return &PORTA;
-        case REGISTER_B: return &PORTB;
-        case REGISTER_C: return &PORTC;
-        case REGISTER_D: return &PORTD;
-    }
-    return NULL;
-}
-volatile uint8_t *_GetDDR(byte dataregister) {
-    switch(dataregister) {
-        case REGISTER_A: return &DDRA;
-        case REGISTER_B: return &DDRB;
-        case REGISTER_C: return &DDRC;
-        case REGISTER_D: return &DDRD;
-    }
-    return NULL;
-}
 
 void _EnablePulse(void) {
     *_LcdCtrlPort |= 1 << _LcdE;

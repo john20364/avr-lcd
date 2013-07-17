@@ -4,11 +4,6 @@
 
 #include "Type.h"
 
-#define REGISTER_A  1
-#define REGISTER_B  2
-#define REGISTER_C  4
-#define REGISTER_D  8
-
 typedef void (* printstring_fptr)(char *);
 typedef void (* setcursor_fptr)(byte, byte);
 typedef void (* void_fptr)(void);
